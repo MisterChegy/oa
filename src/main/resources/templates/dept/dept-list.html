@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>部门管理</title>
+    <link rel="stylesheet" th:href="@{/lib/layui/css/layui.css}"/>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/animate.min.css}">
+</head>
+
+<style>
+    .icon {
+        width: 1em;
+        height: 1em;
+        vertical-align: -0.15em;
+        fill: currentColor;
+        overflow: hidden;
+    }
+    html, body {
+        height: 100%;
+        margin:0;padding:0;
+        font-size: 12px;
+    }
+    div{
+        -moz-box-sizing: border-box;  /*Firefox3.5+*/
+        -webkit-box-sizing: border-box; /*Safari3.2+*/
+        -o-box-sizing: border-box; /*Opera9.6*/
+        -ms-box-sizing: border-box; /*IE8*/
+        box-sizing: border-box; /*W3C标准(IE9+，Safari5.1+,Chrome10.0+,Opera10.6+都符合box-sizing的w3c标准语法)*/
+    }
+
+    .x-nav {
+        padding: 0 20px;
+        position: relative;
+        z-index: 99;
+        line-height: 39px;
+        border-bottom: 1px solid #e5e5e5;
+        height: 39px;
+        overflow: hidden;
+    }
+    .layui-btn-xstree {
+        height: 35px;
+        line-height: 35px;
+        padding: 0 5px;
+        font-size: 12px;
+    }
+    .layui-table-body{overflow-x: hidden;}
+    /* 去掉表格内容超出的提示*/
+    .layui-table-tips-main{display:none}
+    .layui-table-tips-c{display:none}
+    .layui-table-grid-down{display: none}
+    .layui-table-view .layui-table {width:100%}
+</style>
+
+<body class="animated fadeIn">
+
+    <div class="page-loading">
+        <div class="rubik-loader"></div>
+    </div>
+
+    <div style="height: 100%">
+        <div style="height: 100%">
+            <div style="padding: 20px; background-color: #F2F2F2;height:100%;">
+                <div class="layui-row layui-col-space15">
+                    <div class="layui-col-md3">
+                        <div class="layui-card">
+                            <div class="layui-card-header">部门树</div>
+                            <div class="layui-card-body" id="toolbarDiv">
+                                <ul id="departTree" class="dtree" data-id="0"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md9">
+                        <div class="layui-card">
+                            <div class="layui-card-header" id="card-header">部门列表</div>
+                            <div class="layui-card-body">
+                                <table class="layui-hide" id="depart-table"></table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+ 	<script type="text/html" id="toolbar">
+           <a th:if="${session.oper!=null &&  session.oper['deptadd'] != null}" class="layui-btn layui-btn-xs layui-btn-blue" lay-event="add">新增</a>
+        
+    </script>
+    
+    <script type="text/html" id="column-toolbar">
+         <a th:if="${session.oper!=null && session.oper['deptupdate'] != null}" class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+         <a th:if="${session.oper!=null && session.oper['deptdelete'] != null}" class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+        
+    </script>
+
+    <script type="text/html" id="column-toolbar-sort">
+        <svg class="icon" aria-hidden="true" lay-event="up">
+            <use xlink:href="#icon-shangyimian"></use>
+        </svg>
+        <svg class="icon" aria-hidden="true" lay-event="down">
+            <use xlink:href="#icon-xiayimian"></use>
+        </svg>
+        <svg class="icon" aria-hidden="true" lay-event="top">
+            <use xlink:href="#icon-zhidingmian"></use>
+        </svg>
+        <svg class="icon" aria-hidden="true" lay-event="bottom">
+            <use xlink:href="#icon-zhidimian"></use>
+        </svg>
+    </script>
+
+	<script type="text/html" id="statusTpl">
+        <!-- 不能禁用自己 
+            <input type="checkbox" disabled name="status" value="{{d.id}}" lay-skin="switch" lay-text="正常|锁定" lay-filter="status" {{ d.status == true ? 'checked' : '' }}>
+        -->
+        <input type="checkbox" name="status" value="{{d.id}}" lay-skin="switch" lay-text="正常|锁定" lay-filter="status" {{ d.status == 1 ? 'checked' : '' }}>
+        
+    </script>
+
+    <script th:src="@{/lib/jquery/jquery.min.js}"></script>
+    <script th:src="@{/lib/layui/layui.js}"></script>
+    <script th:src="@{/js/common.js}"></script>
+    <script type="text/javascript" src="//at.alicdn.com/t/font_1046816_zflltanvzro.js"></script>
+
+    <script>
+        // 获取有没有删除, 更新, 和新增的权限.
+        var hasdepartDelete = false;
+        var hasdepartUpdate = false;
+        var hasdepartAdd = false;
+
+        $.get('/depart:update', function (data) {
+            hasdepartUpdate = data.data;
+        });
+        $.get('/depart:delete', function (data) {
+            hasdepartDelete = data.data;
+        });
+        $.get('/depart:add', function (data) {
+            hasdepartAdd = data.data;
+        });
+
+        layui.config({
+            base: '/lib/layui/extend/'
+        }).use(['jquery', 'dtree', 'layer', 'table', 'element'], function () {
+            var dtree = layui.dtree;
+            var layer = layui.layer;
+            var table = layui.table;
+
+            var DTree = dtree.render({
+                elem: "#departTree",
+                url: "/depart/tree",
+                dataStyle: "layuiStyle",
+                initLevel: 5,   // 初始打开节点级别
+                method: "GET",
+                dot: false,     // 圆点是否显示
+                toolbar: true,  // 右键工具栏
+                menubar: true,  // 树上方工具栏, 展开、收缩、刷新、搜索等
+                toolbarShow: [],
+                toolbarScroll: "#toolbarDiv",
+                toolbarExt: [
+                    {
+                        toolbarId: "add",
+                        icon: "dtree-icon-roundadd",
+                        title: "添加子节点",
+                        handler: function (node, $div) {
+                            layer.open({
+                                content: "/depart?parentId=" + node.nodeId,
+                                title: "添加子节点",
+                                area: ['40%', '85%'],
+                                type: 2,
+                                maxmin: true,
+                                shadeClose: true,
+                                end: function () {
+                                    refresh();
+                                }
+                            });
+                        }
+                    },
+                    {
+                        toolbarId: "edit",
+                        icon: "dtree-icon-bianji",
+                        title: "编辑",
+                        handler: function (node, $div) {
+                            edit(node.nodeId);
+                        }
+                    },
+                    {
+                        toolbarId: "remove",
+                        icon: "dtree-icon-roundclose",
+                        title: "删除",
+                        handler: function (node, $div) {
+                            del(node.nodeId);
+                        }
+                    }
+                ],
+                response: {
+                    statusCode: 0,
+                    message: "msg",
+                    treeId: "id",
+                    parentId: "0",
+                    title: "oname"
+                },
+                toolbarFun:{
+                    loadToolbarBefore: function(buttons, param, $div){
+                        if(param.level === "1"){ // 如果是顶级节点, 则取消编辑和删除功能.
+                            buttons.edit = "";
+                            buttons.remove = "";
+                        }
+                        if (!hasdepartAdd) {
+                            buttons.add = "";
+                        }
+                        if (!hasdepartDelete) {
+                            buttons.remove = "";
+                        }
+                        if (!hasdepartUpdate) {
+                            buttons.edit = "";
+                        }
+                        return buttons;
+                    }
+                }
+            });
+
+            table.render({
+                elem: '#depart-table'
+                , url: '/depart/list'
+                , where: {
+                    parentId: 0
+                }
+                , cellMinWidth: 80
+                , toolbar: '#toolbar'
+                , cols: [
+                    [
+                        {type: 'numbers', title: '序号', width: "5%"}
+                        , {field: 'id', title: 'ID', hide: true}
+                        , {field: 'oname', title: '名称'}
+                        , {field: 'description', title: '描述' }
+                        , {field: 'status', title: '状态', templet: "#statusTpl", width: "15%"}
+                        , {title: '操作', align: 'center', toolbar: '#column-toolbar'}
+                        , {title: '排序', fixed: 'right', align: 'center', toolbar: '#column-toolbar-sort'}
+                    ]
+                ]
+            });
+
+            dtree.on("node('departTree')", function (obj) {
+                table.reload('depart-table', {
+                    where: {
+                        parentId: obj.param.nodeId
+                    }
+                });
+                $("#card-header").html("[" + obj.param.context + "]的子部门");
+            });
+
+
+            table.on('tool', function (obj) {
+                var data = obj.data;
+                var swapId;
+                var currentId;
+                if (obj.event === 'edit') {
+                    edit(data.id);
+                } else if (obj.event === 'del') {
+                    del(data.id);
+                } else if (obj.event === "up") {
+                    swapId = $(obj.tr).prev().find("td[data-field='id'] div").html();
+                    currentId = data.id;
+                    if (typeof swapId == 'undefined') {
+                        layer.msg("已是第一层");
+                        return;
+                    }
+                    swapSort(currentId, swapId);
+                } else if (obj.event === "down") {
+                    swapId = $(obj.tr).next().find("td[data-field='id'] div").html();
+                    currentId = data.id;
+                    if (typeof swapId == 'undefined') {
+                        layer.msg("已是最后一层");
+                        return;
+                    }
+                    swapSort(currentId, swapId);
+                } else if (obj.event === "top") {
+                    swapId = $("tr[data-index='0']").first().parent().children().first().find("td[data-field='id'] div").html();
+                    currentId = data.id;
+                    swapSort(currentId, swapId);
+                } else if (obj.event === "bottom") {
+                    swapId = $("tr[data-index='0']").first().parent().children().last().find("td[data-field='id'] div").html();
+                    currentId = data.id;
+                    swapSort(currentId, swapId);
+                }
+            });
+
+            // 工具条点击事件
+            table.on('toolbar', function (obj) {
+                var data = obj.data;
+                var event = obj.event;
+				
+                if (event === 'add') {
+                    add();
+                }
+            });
+            
+            function add() {
+                layer.open({
+                    content: "/depart",
+                    title: "新增部门",
+                    area: ['40%', '85%'],
+                    type: 2,
+                    maxmin: true,
+                    shadeClose: true,
+                    end: function () {
+                        $(".layui-laypage-btn")[0].click()
+                    }
+                });
+            }
+
+            
+            function swapSort(currentId, swapId) {
+                $.post('/depart/swap', {currentId: currentId, swapId: swapId}, function (data) {
+                    layer.msg("交换成功");
+                    handlerResult(data, function () {
+                        refresh();
+                    });
+                });
+            }
+
+            function del(id) {
+                layer.confirm("你确定删除数据吗？如果存在下级节点则一并删除！", {icon: 3, title: '提示'},
+                    function (index) {
+                        $.post('/depart/' + id, {_method: "DELETE"}, function (data) {
+                            layer.close(index);
+                            handlerResult(data, function () {
+                                refresh();
+                            });
+                        });
+                    }, function (index) {
+                        layer.close(index);
+                    }
+                );
+            }
+
+            function refresh() {
+                table.reload("depart-table");
+                DTree.menubarMethod().refreshTree();
+            }
+
+
+            function edit(id) {
+                layer.open({
+                    content: '/depart/' + id,
+                    title: "编辑",
+                    area: ['40%', '85%'],
+                    type: 2,
+                    maxmin: true,
+                    shadeClose: true,
+                    end: function () {
+                        refresh();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

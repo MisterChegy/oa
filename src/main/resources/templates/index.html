@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, target-densitydpi=device-dpi"/>
+	<title>首页</title>
+
+    <link rel="apple-touch-icon" sizes="180x180" th:href="@{/favicon.ico}">
+    <link rel="icon" type="image/png" sizes="32x32" th:href="@{/favicon.ico}">
+    <link rel="icon" type="image/png" sizes="16x16" th:href="@{/favicon.ico}">
+    <link rel="stylesheet" th:href="@{/lib/layui/css/layui.css}">
+    <link rel="stylesheet" th:href="@{/css/zadmin.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" href="//at.alicdn.com/t/font_1179208_6sxekl4z8m7.css">
+</head>
+
+<body class="layui-layout-body">
+
+    <div class="layui-layout layui-layout-admin">
+
+        <div class="layui-header">
+            <!-- logo 区域 -->
+            <div class="layui-logo">
+                <img th:src="@{/images/security.png}" alt="logo"/>
+                <cite>&nbsp;Z-Admin&emsp;</cite>
+            </div>
+
+            <!-- 头部区域 -->
+            <ul class="layui-nav layui-layout-left">
+                <li class="layui-nav-item" lay-unselect>
+                    <a lay-event="flexible" title="侧边伸缩">
+                        <i class="layui-icon layui-icon-shrink-right"></i>
+                    </a>
+                </li>
+                <!-- 面包屑 -->
+                <span class="layui-breadcrumb layui-anim layui-anim-up">
+                    <a><cite>首页</cite></a>
+                </span>
+            </ul>
+
+            <!-- 头像区域 -->
+            <ul class="layui-nav layui-layout-right">
+                <li class="layui-nav-item">
+                    <a lay-event="clear" title="清理标签缓存"><img th:src="@{/images/clear.png}" alt="" style="height: 18px;"/></a>
+                </li>
+
+                <li class="layui-nav-item">
+                    <a>
+                        <img th:src="@{/images/avatar.png}" class="layui-nav-img" alt="头像">
+                        <cite></cite>
+                        <span class="layui-nav-more"></span>
+                    </a>
+                    <dl class="layui-nav-child layui-anim layui-anim-upbit">
+<!--                        <dd lay-unselect>-->
+<!--                            <a href="#">个人中心</a>-->
+<!--                        </dd>-->
+<!--                        <dd lay-unselect>-->
+<!--                            <a href="#">修改密码</a>-->
+<!--                        </dd>-->
+<!--                        <hr>-->
+                        <dd lay-unselect>
+                            <a onclick="logout()">退出</a>
+                        </dd>
+                    </dl>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 左侧导航区域 -->
+        <div class="layui-side">
+            <div class="layui-side-scroll">
+                <ul class="layui-nav layui-nav-tree" lay-filter="lay-nav" lay-accordion="true">
+                    <li class="layui-nav-item layui-this">
+                        <a lay-url="welcome" lay-id="home">
+                            <i class="layui-icon layui-icon-home"></i>&emsp;<cite>首页</cite>
+                        </a>
+                    </li>
+
+                    <li class="layui-nav-item" th:each="menu:${menus}">
+                        <a data-th-lay-id="${menu.url}" data-th-lay-url="${menu.url}">
+                            <i class="iconfont" th:classappend="${menu.icon}"></i>&emsp;
+                            <cite th:text="${menu.menuName}"></cite>
+                        </a>
+                        <dl th:if="${!#lists.isEmpty(menu.children)}" class="layui-nav-child">
+                            <dd th:each="child:${menu.children}">
+                                <a data-th-lay-id="${child.url}" data-th-lay-url="${child.url}">
+                                    <cite th:text="${child.menuName}"></cite>
+                                </a>
+<!--                                 <th:block th:unless="${#lists.isEmpty(child.children)}" th:include="common/public::menu(${child})" />
+ -->                            </dd>
+                        </dl>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="layui-body">
+            <div class="layui-pagetabs">
+                <div class="layui-icon admin-tabs-control layui-icon-refresh-3" lay-event="refresh"></div>
+                <div class="layui-tab" lay-unauto lay-allowclose="true" lay-filter="lay-tab">
+                    <ul class="layui-tab-title">
+                        <li lay-id="home" lay-url="welcome" class="layui-this"><i
+                                class="layui-icon layui-icon-home"></i></li>
+                    </ul>
+                    <div class="layui-tab-content">
+                        <div class="layui-tab-item layui-show">
+                            <iframe src="" class="layui-iframe"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部固定区域 -->
+        <div class="layui-footer">
+            copyright © 2019 Z-Admin all rights reserved.
+        </div>
+
+        <!-- 移动端遮罩 -->
+        <div class="site-mobile-shade"></div>
+    </div>
+
+    <script th:src="@{/lib/layui/layui.js}"></script>
+    <script th:src="@{/lib/jquery/jquery.min.js}"></script>
+    <script th:src="@{/js/common.js}"></script>
+
+    <script>
+        /* var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?407751f44c2fb9c2e7b5b5d3b856fbc1";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })(); */
+
+        function logout() {
+            sessionStorage.removeItem("tabs");
+            sessionStorage.removeItem("currentTabId");
+            window.location = "logout";
+        }
+    </script>
+
+
+</body>
+
+</html>

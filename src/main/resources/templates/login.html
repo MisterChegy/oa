@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>登录页</title>
+    <link rel="shortcut icon" type="image/x-icon"/>
+    <link rel="stylesheet" th:href="@{/lib/layui/css/layui.css}">
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="login-main">
+        <header class="layui-elip">登录</header>
+        <form class="layui-form">
+            <div class="layui-input-inline">
+                <input type="text" name="username" lay-verify="required" lay-vertype="tips" placeholder="管理员 admin 普通用户 user" autocomplete="off"
+                       class="layui-input">
+            </div>
+            <div class="layui-input-inline">
+                <input type="password" name="password" lay-verify="required" lay-vertype="tips" placeholder="密码 123456" autocomplete="off"
+                       class="layui-input">
+            </div>
+            <!-- <div class="layui-input-inline" th:if="${loginVerify}">
+                <input name="captcha" lay-verify="required" placeholder="验证码" style="width:50%;" type="text"
+                       class="layui-input-inline layui-input">
+                <img style="margin-bottom: 15px;" onclick="generateCaptcha(this)"
+                     th:src="@{/captcha(timestamp=${new java.util.Date().getTime()})}"/>
+            </div> -->
+            <div class="layui-input-inline login-btn">
+                <button lay-submit lay-filter="login" class="layui-btn layui-btn-blue">登录</button>
+            </div>
+            <hr/>
+            <p>
+                <a th:href="@{/register}" class="fl">立即注册</a><a href="javascript:" class="fr">忘记密码？</a>
+            </p>
+            <br><br>
+            <div class="layui-input-inline">
+                <div class="layui-form-mid layui-word-aux layui-login-tips">第三方账号登录: </div>
+                <img th:src="@{/images/github.png}" onclick="oauth2_github()" class="layui-login-oauth-icon" title="Github 登录">
+                <img th:src="@{/images/gitee.png}" onclick="oauth2_gitee()" class="layui-login-oauth-icon" title="Gitee 登录">
+            </div>
+        </form>
+    </div>
+
+    <script th:src="@{/lib/jquery/jquery.min.js}"></script>
+    <script th:src="@{/lib/layui/layui.js}"></script>
+    <script th:src="@{/js/common.js}"></script>
+
+    <script type="text/javascript">
+
+        $(function () {
+            layui.use(['form'], function () {
+                // 操作对象
+                var form = layui.form;
+              //监听提交
+                form.on('submit(login)',function (data) {
+                	/* console.log(data.field); */
+                	
+                    $.ajax({
+                        url:'/login2' ,
+                        data:data.field,
+                        type:'post',
+                        success:function (obj) {
+                        	/* console.log(obj); */
+                            layer.msg(obj.msg);
+                            if(obj.msg == '登录成功'){
+                            	window.location.href = "/index";
+                            }
+                        },
+                        error:function (obj) {
+                            
+                            layer.msg("添加失败，请重新操作！")
+                        }
+                    });
+                   return false;
+                });
+            });
+        });
+
+
+        
+    </script>
+</body>
+</html>
